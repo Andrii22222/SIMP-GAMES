@@ -1,0 +1,12 @@
+{
+  "name": "simp-games",
+  "version": "0.1.0",
+  "main": "sg.js",
+  "scripts": {
+    "test": "node ./test-sg.js"
+  },
+  "keywords": [],
+  "author": "Москаленко Андрій",
+  "license": "MIT",
+  "description": "Сервер простих ігор"
+}
