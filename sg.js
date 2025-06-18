@@ -29,6 +29,10 @@ const fieldImage = new Image();
 fieldImage.src = './img/field.png';
 const rabbitImage = new Image();
 rabbitImage.src = './img/rabbit.png';
+// Ігрові параметри 
+const START_MOVE_TIMEOUT = 200;
+const MIN_MOVE_TIMEOUT = 50;
+const STEP_MOVE_TIMEOUT = 2;
 
 
 // PYTHON GAME
@@ -101,12 +105,16 @@ function getNewHeadCell(game) {
     return newHead;
 }
 
-// Обгортка для замикання контексту
+// Відпрацьовую та відмальвуює пересування пітона
 function gameMachine(newGame) {
   const game = newGame;
-  // Оце gameMachine
+  // 
   return function () {
-    // 
+    // Пауза?
+    if (game.isPaused) {
+      return;
+    }
+    // Чи ні
     const rabbit = game.rabbit;
     const python = game.python;
     // Голова буде тут
@@ -127,6 +135,12 @@ function gameMachine(newGame) {
       if (rabbit.x === newHead.x && rabbit.y === newHead.y) {
         // Зів крілика
         game.score++;
+        // Збільшуємо швидкість гри
+        if (game.moveTimeout > MIN_MOVE_TIMEOUT) {
+          game.moveTimeout -= STEP_MOVE_TIMEOUT;
+          clearInterval(game.timerId);
+          game.timerId = setInterval(gameMachine(game), game.moveTimeout);
+        }
         // Робимо нового крілика
         game.rabbit = getRandomCell(python);
       } else {
@@ -170,22 +184,24 @@ function createGame(canvasContext) {
     moveDirection: START_PYTHON_D,
     // Таймер для відмалювання графіки
     timerId: -1,
-    // Запускає відмалювання графіки
-    startDrawing: function () {
-      drawField(this);
-      drawRabbit(this);
-      drawPython(this);
-      // Запускаємо таймер
-      this.timerId = setInterval(gameMachine(this), 200);
-      return this.timerId;
-    }
+    // Швидкість гадюки (затримка між пересуванням ms)
+    moveTimeout: START_MOVE_TIMEOUT,
+    // Гра на паузі
+    isPaused: false,
+    // Таблиця лідерів
+    leaderBoard: [],
   };
   // Його і вертаємо
   return gameContext;
 }
 
-// Обробник подій клавіатури
-function keydownHandler(gameContext) {
+
+// GAME CONTROL
+//----------------------------------------------------------------------
+// Функціїї керування грою
+
+// Обробляє події клавіатури
+function keydownProcess(gameContext) {
   const game = gameContext;
   return function (event) {
     const ctx = game.ctx;
@@ -199,9 +215,52 @@ function keydownHandler(gameContext) {
       game.moveDirection = 'right';
     else if (event.keyCode === 40)
       game.moveDirection = 'down'; 
+    else if (event.keyCode === 32)
+      game.isPaused = !game.isPaused;
   }
 }
 
+// Запускає відмалювання графіки
+function startGame(gameContext) {
+  const game = gameContext;
+  return function (event) {
+    // Початкове налаштування
+    game.score = 0;
+    game.rabbit = getRandomCell([{
+      x: START_PYTHON_X,
+      y: START_PYTHON_Y
+    }]);
+    game.python = [{
+      x: START_PYTHON_X,
+      y: START_PYTHON_Y
+    }];
+    game.moveDirection = START_PYTHON_D;
+    game.isPaused = false;
+    game.moveTimeout = START_MOVE_TIMEOUT;
+    
+    // Початкове відмалювання
+    drawField(game);
+    drawRabbit(game);
+    drawPython(game);
+    // Запускаємо таймер
+    if (game.timerId === -1) {
+      game.timerId = setInterval(gameMachine(game), game.moveTimeout);
+    }
+    // Знімаємо фокус із кнопки
+    event.target.blur();
+  }
+}
+
+// Ставить гру на паузу
+function pauseGame(gameContext) {
+  const game = gameContext;
+  return function (event) {
+    // Переключаємо паузу
+    game.isPaused = !game.isPaused;
+    // Знімаємо фокус із кнопки
+    event.target.blur();
+  }
+}
 
 // MAIN
 //----------------------------------------------------------------------
@@ -214,12 +273,19 @@ const ctx = canvas.getContext('2d');
 // Створення ігрового контексту
 const gameContext = createGame(ctx);
 
-// Запуск ігрової механіки
-const timerId = gameContext.startDrawing();
+// Запуск нової гри кнопкою
+const startGameHandler = startGame(gameContext);
+const startButton = document.getElementById('startBtn');
+startButton.addEventListener('click', startGameHandler);
+
+// Пауза гри кнопкою
+const pauseGameHandler = pauseGame(gameContext);
+const pauseButton = document.getElementById('pauseBtn');
+pauseButton.addEventListener('click', pauseGameHandler);
 
 // Перехоплення вводу з клавіатури
-const handler = keydownHandler(gameContext);
-document.addEventListener('keydown', handler);
+const keydownHandler = keydownProcess(gameContext);
+document.addEventListener('keydown', keydownHandler);
 
 // THE END
 //----------------------------------------------------------------------
