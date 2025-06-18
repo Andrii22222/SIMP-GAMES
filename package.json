@@ -1,7 +1,11 @@
 {
   "name": "simp-games",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "sg.js",
+  "type": "module",
+  "dependencies": {
+    "simp-tools": "file:../simp-tools"
+  },
   "scripts": {
     "test": "node ./test-sg.js"
   },

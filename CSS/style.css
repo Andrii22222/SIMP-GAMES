@@ -1,4 +1,51 @@
 canvas {
   display: block;
   margin: 0 auto;
+  background: #222;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f0f0f0;
+}
+
+.wrapper {
+  width: 1184px;
+  margin: 0 auto;
+}
+
+header {
+  background: #333;
+  color: white;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.header-controls {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.header-controls label {
+  font-size: 1rem;
+}
+
+.header-controls input {
+  padding: 0.4rem;
+  font-size: 1rem;
+}
+
+.header-controls button {
+  padding: 0.4rem 1rem;
+  font-size: 1rem;
+  cursor: pointer;
 }
