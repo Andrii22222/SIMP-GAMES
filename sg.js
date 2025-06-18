@@ -84,25 +84,67 @@ function drawPython(game) {
 function drawLabel(game, text, cellX, cellY) {
   const ctx = game.ctx;
   ctx.fillStyle = 'white';
-  ctx.font = '24px Arial';
+  ctx.font = '20px Arial';
   ctx.fillText(`${text}`, CELL_SIZE * cellX, CELL_SIZE * cellY);
+}
+
+// Виводить таблицю результатів
+function drawRecords(game, cellX, cellY) {
+  const ctx = game.ctx;
+  let currX = cellX;
+  let currY = cellY;
+  ctx.fillStyle = 'white';
+  ctx.font = '14px Arial';
+  for (let i = 0; i < 10 && i < game.leaderNames.length; i++) {
+    const name = game.leaderNames[i];
+    const score = game.leaderScores[i];
+    ctx.fillText(`${name}: ${score}`, CELL_SIZE * currX, CELL_SIZE * currY);
+    currX += 6;
+    // Переводимо вивід на новий рядок
+    if (currX - cellX > 6 * 4) {
+      currX = cellX;
+      currY += 1;
+    }
+  }
 }
 
 // Розраховує нові координати голови
 function getNewHeadCell(game) {
-    // Старе положення голови
-    const newHead = {
-      x: game.python[0].x, 
-      y: game.python[0].y
-    };   
-    const move = game.moveDirection;
-    // Нове положення голови
-    if (move === 'left')  newHead.x -= 1;
-    if (move === 'right') newHead.x += 1;
-    if (move === 'up')    newHead.y -= 1;
-    if (move === 'down')  newHead.y += 1;
-    // 
-    return newHead;
+  // Старе положення голови
+  const newHead = {
+    x: game.python[0].x, 
+    y: game.python[0].y
+  };   
+  const move = game.moveDirection;
+  // Нове положення голови
+  if (move === 'left')  newHead.x -= 1;
+  if (move === 'right') newHead.x += 1;
+  if (move === 'up')    newHead.y -= 1;
+  if (move === 'down')  newHead.y += 1;
+  // 
+  return newHead;
+}
+
+// Реєструє результат у таблиці
+function addNewRecord(game) {
+  const playerNameElement = document.getElementById('playerName');
+  let playerName = playerNameElement.value.substring(0, 15);
+    if (playerName === '') {
+      playerName = 'Гравець';
+  }
+  // Добавляємо залежно від рахунку (масив сортований)
+  for (let i = 0; i < game.leaderScores.length; i++) {
+    if (game.score > game.leaderScores[i]) {
+      game.leaderNames.splice(i, 0, playerName);
+      game.leaderScores.splice(i, 0, game.score);
+      return;
+    }
+  }
+  // Добавляємо в кінець якщо рахунок найменший і список короткий
+  if (game.leaderScores.length < 15) {
+    game.leaderNames.push(playerName);
+    game.leaderScores.push(game.score);
+  }
 }
 
 // Відпрацьовую та відмальвуює пересування пітона
@@ -124,11 +166,13 @@ function gameMachine(newGame) {
       // Кінець гри, якщо голова врізається у стіну
       clearInterval(game.timerId);
       game.timerId = -1;
+      addNewRecord(game);
     } 
     else if (python.some(cell => cell.x === newHead.x && cell.y === newHead.y )) {
       // Кінець гри, якщо вкусив самого себе
       clearInterval(game.timerId);
       game.timerId = -1;
+      addNewRecord(game);
     } else {
       // Не врізається
       // А крілик там є?
@@ -154,7 +198,9 @@ function gameMachine(newGame) {
     drawField(game);
     drawRabbit(game);
     drawPython(game);
-    drawLabel(game, `Score: ${game.score}`, 2, 2);
+    drawLabel(game, `Current Score: ${game.score}`, 1, 2);
+    drawLabel(game, 'Top 10 Scores:', 1, 1);
+    drawRecords(game, 7, 1);
   }
 }
 
@@ -180,16 +226,17 @@ function createGame(canvasContext) {
       x: START_PYTHON_X,
       y: START_PYTHON_Y
     }],
-    // Новий напрям руху
+    // Напрям руху
     moveDirection: START_PYTHON_D,
     // Таймер для відмалювання графіки
     timerId: -1,
-    // Швидкість гадюки (затримка між пересуванням ms)
+    // Швидкість руху (затримка між пересуванням ms)
     moveTimeout: START_MOVE_TIMEOUT,
     // Гра на паузі
     isPaused: false,
     // Таблиця лідерів
-    leaderBoard: [],
+    leaderNames: [],
+    leaderScores: [],
   };
   // Його і вертаємо
   return gameContext;
