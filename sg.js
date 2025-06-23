@@ -33,10 +33,36 @@ rabbitImage.src = './img/rabbit.png';
 const START_MOVE_TIMEOUT = 200;
 const MIN_MOVE_TIMEOUT = 50;
 const STEP_MOVE_TIMEOUT = 2;
+// Мережеві параметри
+const PROXY_HOST = 'http://localhost:5000';
 
 
 // PYTHON GAME
 //----------------------------------------------------------------------
+
+// Зберігає таблицю результатів на проксі-серврі
+function saveLeaders(game) {
+  fetch(PROXY_HOST + '/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(game.leaders)
+  }).then(() => {
+    console.log('Збережено!');
+  });
+}
+
+// Завантажує таблицю резултатів ні проксі-серврі
+function loadLeaders(game) {
+  game.leaders = [];
+  fetch(PROXY_HOST + '/load')
+    .then(res => res.json())
+    .then(data => {
+      if (Array.isArray(data)) {
+        game.leaders = data;
+      }      
+      console.log('Завантажено!');
+    });
+}
 
 // Розраховують графічні координати на канві по ігровим на полі
 function getCanvasX(cellX) {
@@ -95,9 +121,9 @@ function drawRecords(game, cellX, cellY) {
   let currY = cellY;
   ctx.fillStyle = 'white';
   ctx.font = '14px Arial';
-  for (let i = 0; i < 10 && i < game.leaderNames.length; i++) {
-    const name = game.leaderNames[i];
-    const score = game.leaderScores[i];
+  for (let i = 0; i < 10 && i < game.leaders.length; i++) {
+    const name = game.leaders[i].name;
+    const score = game.leaders[i].score;
     ctx.fillText(`${name}: ${score}`, CELL_SIZE * currX, CELL_SIZE * currY);
     currX += 6;
     // Переводимо вивід на новий рядок
@@ -105,6 +131,28 @@ function drawRecords(game, cellX, cellY) {
       currX = cellX;
       currY += 1;
     }
+  }
+}
+
+// Реєструє результат у таблиці
+function addNewRecord(game) {
+  const playerNameElement = document.getElementById('playerName');
+  let playerName = playerNameElement.value.substring(0, 15);
+    if (playerName === '') {
+      playerName = 'Гравець';
+  }
+  // Добавляємо залежно від рахунку (масив сортований)
+  for (let i = 0; i < game.leaders.length; i++) {
+    if (game.score > game.leaders[i].score) {
+      game.leaders.splice(i, 0, { name: playerName, score: game.score });
+      saveLeaders(game);
+      return;
+    }
+  }
+  // Добавляємо в кінець якщо рахунок найменший і список короткий
+  if (game.leaders.length < 15) {
+    game.leaders.push({ name: playerName, score: game.score });
+    saveLeaders(game);
   }
 }
 
@@ -123,28 +171,6 @@ function getNewHeadCell(game) {
   if (move === 'down')  newHead.y += 1;
   // 
   return newHead;
-}
-
-// Реєструє результат у таблиці
-function addNewRecord(game) {
-  const playerNameElement = document.getElementById('playerName');
-  let playerName = playerNameElement.value.substring(0, 15);
-    if (playerName === '') {
-      playerName = 'Гравець';
-  }
-  // Добавляємо залежно від рахунку (масив сортований)
-  for (let i = 0; i < game.leaderScores.length; i++) {
-    if (game.score > game.leaderScores[i]) {
-      game.leaderNames.splice(i, 0, playerName);
-      game.leaderScores.splice(i, 0, game.score);
-      return;
-    }
-  }
-  // Добавляємо в кінець якщо рахунок найменший і список короткий
-  if (game.leaderScores.length < 15) {
-    game.leaderNames.push(playerName);
-    game.leaderScores.push(game.score);
-  }
 }
 
 // Відпрацьовую та відмальвуює пересування пітона
@@ -235,8 +261,7 @@ function createGame(canvasContext) {
     // Гра на паузі
     isPaused: false,
     // Таблиця лідерів
-    leaderNames: [],
-    leaderScores: [],
+    leaders: [],
   };
   // Його і вертаємо
   return gameContext;
@@ -319,6 +344,7 @@ const ctx = canvas.getContext('2d');
 
 // Створення ігрового контексту
 const gameContext = createGame(ctx);
+loadLeaders(gameContext);
 
 // Запуск нової гри кнопкою
 const startGameHandler = startGame(gameContext);
