@@ -4,10 +4,10 @@
 //----------------------------------------------------------------------
 
 // const sts = require('../SIMP-TOOLS/simp-tools.js');
-// import * as sts from '../SIMP-TOOLS/simp-tools.js';
+import * as sts from '../SIMP-TOOLS/simp-tools.js';
 
 // Створюємо власний генератор
-// const myRandom = sts.createGenerator(Date.now());
+const myRandom = sts.createGenerator(Date.now());
 
 
 // RESOURCES
@@ -75,10 +75,10 @@ function getCanvasY(cellY) {
 function getRandomCell(occupiedCells) {
   const cell = { x: 1, y: 1 };
   do {
-    cell.x = Math.ceil(Math.random() * FIELD_WIDTH);
-    cell.y = Math.ceil(Math.random() * FIELD_HEIGTH);
-    // cell.x = Math.ceil(myRandom() * FIELD_WIDTH);
-    // cell.y = Math.ceil(myRandom() * FIELD_HEIGTH);
+    // cell.x = Math.ceil(Math.random() * FIELD_WIDTH);
+    // cell.y = Math.ceil(Math.random() * FIELD_HEIGTH);
+    cell.x = Math.ceil(myRandom() * FIELD_WIDTH);
+    cell.y = Math.ceil(myRandom() * FIELD_HEIGTH);
   }
   while (occupiedCells.some(item => item.x === cell.x && item.y === cell.y))
   return cell;
